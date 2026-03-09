@@ -1,45 +1,24 @@
 {
-  "last_update": "2026-03-09T17:25:00Z",
+  "last_update": "2026-03-09T18:25:00Z",
   "antigravity_log": [
     {
       "date": "2026-03-09",
-      "event": "Creación del repositorio Trevolo-Dashboard y estructura base."
+      "event": "Actualización a Trevolo Dashboard v2.0 - Motor Dinámico."
     }
   ],
-  "onboarding": {
-    "status": "pending",
-    "steps": [
-      {"id": 1, "label": "Crear cuenta en EasyPanel", "completed": false},
-      {"id": 2, "label": "Nuevo proyecto en EasyPanel", "completed": false},
-      {"id": 3, "label": "Instalar n8n y herramientas", "completed": false},
-      {"id": 4, "label": "Conectar Evolution API / YCloud", "completed": false},
-      {"id": 5, "label": "Mapeo de Datos y Webhooks", "completed": false}
-    ]
-  },
-  "content_factory": [
-    {
-      "id": "reel_01",
-      "title": "Reel Calentamiento - Avatar",
-      "status": "in_progress",
-      "drive_link": "",
-      "copy": "",
-      "assets": {
-        "freepik": false,
-        "voice": true,
-        "video": false
-      }
-    }
-  ],
+  "clientes": [],
+  "creativos": [],
   "gemas": [
-    {"name": "OPERACIONES_MASTER", "category": "CORE"},
-    {"name": "VENTAS_STRATEGY", "category": "CORE"},
-    {"name": "SKILLS_ARCHITECT", "category": "CORE"},
-    {"name": "N8N_WORKFLOWS", "category": "TECH"},
-    {"name": "N8N_CODE_JS", "category": "TECH"},
-    {"name": "WHATSAPP_YCLOUD", "category": "TECH"},
-    {"name": "WHATSAPP_SOFY", "category": "TECH"},
-    {"name": "CREATIVOS_META", "category": "CREATIVE"},
-    {"name": "KNOWLEDGE_N_LM", "category": "CREATIVE"},
-    {"name": "ORACULO_FINANZAS", "category": "EXTRA"}
-  ]
+    {"name": "OPERACIONES_MASTER", "description": "Arquitecto Maestro de Operaciones: Gestión de proyectos y SOPs."},
+    {"name": "VENTAS_STRATEGY", "description": "Estrategia de ventas: Ayuda a vender y presentar documentos a clientes."},
+    {"name": "SKILLS_ARCHITECT", "description": "Experto en SKILLS: Arquitecto de mejoras para Antigravity."},
+    {"name": "N8N_WORKFLOWS", "description": "N8N Mentor: Guía experta para flujos completos en n8n."},
+    {"name": "N8N_CODE_JS", "description": "Code JavaScript: Creador de código técnico para nodos de n8n."},
+    {"name": "WHATSAPP_YCLOUD", "description": "YCloud Elite: Despliegue técnico de WhatsApp API y Supabase."},
+    {"name": "WHATSAPP_SOFY", "description": "Asistente Sofy: Chatbot de atención y pre-calificación."},
+    {"name": "CREATIVOS_META", "description": "Director Creativo: Estratega audiovisual para anuncios e IA."},
+    {"name": "KNOWLEDGE_N_LM", "description": "Gema NotebookLM: Búsqueda avanzada en documentos de conocimiento."},
+    {"name": "ORACULO_FINANZAS", "description": "Inversor: Experto en asesoramiento financiero y análisis."}
+  ],
+  "notas": ""
 }
