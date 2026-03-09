@@ -111,14 +111,24 @@ document.getElementById('save-btn').addEventListener('click', async () => {
     document.getElementById('save-btn').innerText = "Guardando...";
     dashboardData.last_update = new Date().toISOString();
     
-    // Aquí es donde n8n toma el relevo
-    const WEBHOOK_URL = "URL_DE_TU_N8N_ACA"; // El usuario debe proveer esto
+    const WEBHOOK_URL = "https://macavi-n8n.e2z7ef.easypanel.host/webhook/update-dashboard-data-v2";
     
     try {
-        console.log("Enviando a n8n:", dashboardData);
-        alert("¡Datos guardados localmente! Para sincronizar con GitHub, conectá el Webhook de n8n.");
-        document.getElementById('save-btn').innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Guardar Cambios';
+        const response = await fetch(WEBHOOK_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dashboardData)
+        });
+
+        if (response.ok) {
+            alert("¡Excelente! Los datos se sincronizaron con GitHub correctamente.");
+        } else {
+            alert("El servidor respondió con error, pero los cambios están en tu navegador.");
+        }
     } catch (e) {
-        alert("Error al guardar.");
+        console.error("Error al guardar:", e);
+        alert("¡Guardado localmente! (Asegurate de que el flujo de n8n esté activo y acepte peticiones CORS si lo usás desde la web).");
+    } finally {
+        document.getElementById('save-btn').innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Guardar Cambios';
     }
 });
