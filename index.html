@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trevolo Command Center v3.0</title>
+    <title>Trevolo Command Center v3.1</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -15,9 +15,9 @@
     <div id="login-screen">
         <div class="login-card glass">
             <div class="logo-box">
-                <img src="./logo_trevolo.png" alt="Trevolo Logo" class="main-logo" onerror="this.src='https://cdn-icons-png.flaticon.com/512/2618/2618254.png'">
+                <img src="logo_trevolo.png" alt="Trevolo Logo" class="main-logo" onerror="this.src='https://cdn-icons-png.flaticon.com/512/2618/2618254.png'">
             </div>
-            <h1>Trevolo Ops 3.0</h1>
+            <h1>Trevolo Ops</h1>
             <p>Ingresá la contraseña maestra</p>
             <input type="password" id="pass-input" placeholder="Contraseña...">
             <button id="login-btn" class="ripple">Acceder <i class="fa-solid fa-arrow-right"></i></button>
@@ -29,9 +29,9 @@
     <div id="dashboard" class="hidden">
         <header>
             <div class="header-left">
-                <div class="logo-mini"><img src="./logo_trevolo.png" alt="T" onerror="this.style.display='none'"></div>
+                <div class="logo-mini"><img src="logo_trevolo.png" alt="T" onerror="this.style.display='none'"></div>
                 <div class="title-stack">
-                    <h2>COMMAND CENTER v3.0</h2>
+                    <h2>COMMAND CENTER v3.1</h2>
                     <span id="last-sync">Cargando datos...</span>
                 </div>
             </div>
@@ -51,7 +51,7 @@
                 <div class="tab-header">
                     <div class="text">
                         <h3>Gestión de Clientes</h3>
-                        <p>Control de Onboarding y estados operativos.</p>
+                        <p>Ordená tus procesos por tipo de flujo.</p>
                     </div>
                     <button class="btn-add" onclick="openModal('modal-add-client')"><i class="fa-solid fa-plus"></i> Nuevo Cliente</button>
                 </div>
@@ -90,13 +90,18 @@
         </main>
     </div>
 
-    <!-- MODALES -->
     <div id="modal-overlay" class="hidden" onclick="closeAllModals()"></div>
     
     <!-- Modal Add Client -->
     <div id="modal-add-client" class="modal glass hidden">
         <h4>Agregar Nuevo Cliente</h4>
         <input type="text" id="new-client-name" placeholder="Nombre de la empresa/marca">
+        <label style="font-size: 12px; color: var(--emerald);">Seleccioná el proceso:</label>
+        <select id="new-client-template">
+            <option value="chatbot">Agente / Chatbot (WhatsApp)</option>
+            <option value="stock">Control de Stock / Inventario</option>
+            <option value="custom">Flujo Personalizado</option>
+        </select>
         <div class="modal-actions">
             <button class="btn-text" onclick="closeAllModals()">Cancelar</button>
             <button class="btn-primary" onclick="addClient()">Crear</button>
@@ -106,7 +111,7 @@
     <!-- Modal Add Creative -->
     <div id="modal-add-creative" class="modal glass hidden">
         <h4>Nuevo Proyecto Creativo</h4>
-        <input type="text" id="new-creative-title" placeholder="Título del Reel/Carrusel">
+        <input type="text" id="new-creative-title" placeholder="Título del Proyecto">
         <select id="new-creative-type">
             <option value="reel">Reel (Video)</option>
             <option value="carousel">Carrusel (Imágenes)</option>
@@ -121,8 +126,8 @@
     <!-- Modal Add Gem -->
     <div id="modal-add-gem" class="modal glass hidden">
         <h4>Registrar Nueva Gema</h4>
-        <input type="text" id="new-gem-name" placeholder="Nombre de la Gema (ej: N8N_MASTER)">
-        <textarea id="new-gem-desc" placeholder="Descripción de para qué sirve la gema..."></textarea>
+        <input type="text" id="new-gem-name" placeholder="Nombre de la Gema">
+        <textarea id="new-gem-desc" placeholder="Descripción de la gema..."></textarea>
         <div class="modal-actions">
             <button class="btn-text" onclick="closeAllModals()">Cancelar</button>
             <button class="btn-primary" onclick="addGem()">Guardar Gema</button>
@@ -131,15 +136,23 @@
 
     <!-- Modal Link Gem -->
     <div id="modal-link-gem" class="modal glass hidden">
-        <h4>Vincular Gema a Proyecto</h4>
+        <h4>Vincular Gema</h4>
         <p id="link-gem-target-name" style="font-size: 14px; margin-bottom: 10px; color: var(--emerald);"></p>
-        <select id="select-gem-to-link">
-            <!-- Rendered by JS -->
-        </select>
+        <select id="select-gem-to-link"></select>
         <input type="text" id="link-gem-thread" placeholder="Nombre de la charla de Gemini">
         <div class="modal-actions">
             <button class="btn-text" onclick="closeAllModals()">Cancelar</button>
             <button class="btn-primary" onclick="confirmLinkGem()">Vincular</button>
+        </div>
+    </div>
+
+    <!-- Modal Add Step -->
+    <div id="modal-add-step" class="modal glass hidden">
+        <h4>Agregar Paso al Checklist</h4>
+        <input type="text" id="new-step-label" placeholder="Nombre del paso (ej: Firma de contrato)">
+        <div class="modal-actions">
+            <button class="btn-text" onclick="closeAllModals()">Cancelar</button>
+            <button class="btn-primary" onclick="confirmAddStep()">Agregar Paso</button>
         </div>
     </div>
 

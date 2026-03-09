@@ -1,11 +1,30 @@
 {
-  "last_update": "2026-03-09T18:40:00-03:00",
+  "last_update": "2026-03-09T18:55:00-03:00",
   "antigravity_log": [
     {
       "date": "2026-03-09",
-      "event": "Evolución a Trevolo Dashboard v3.0 - Precisión y Escala."
+      "event": "Evolución a Trevolo Dashboard v3.1 - Flexibilidad de Procesos."
     }
   ],
+  "templates": {
+    "chatbot": [
+      { "id": 1, "label": "Crear cuenta EasyPanel", "completed": false },
+      { "id": 2, "label": "Instalar n8n / Herramientas", "completed": false },
+      { "id": 3, "label": "Conectar Evolution/YCloud", "completed": false },
+      { "id": 4, "label": "Mapeo de Datos y Webhooks", "completed": false },
+      { "id": 5, "label": "Entrega de Manual Cliente", "completed": false }
+    ],
+    "stock": [
+      { "id": 1, "label": "Relevamiento de Inventario", "completed": false },
+      { "id": 2, "label": "Configurar Base de Datos (Supabase/Sheets)", "completed": false },
+      { "id": 3, "label": "Lógica de Alertas de Stock", "completed": false },
+      { "id": 4, "label": "Panel de Control de Precios", "completed": false },
+      { "id": 5, "label": "Testing de Escaneo/Carga", "completed": false }
+    ],
+    "custom": [
+      { "id": 1, "label": "Paso Inicial Personalizado", "completed": false }
+    ]
+  },
   "clientes": [],
   "creativos": [],
   "gemas": [

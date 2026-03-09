@@ -1,68 +1,67 @@
-const MASTER_PASS = "35277Jairo924";
-const WEBHOOK_URL = "https://macavi-n8n.e2z7ef.easypanel.host/webhook/update-dashboard-data-v2";
-let dashboardData = { clientes: [], creativos: [], gemas: [], last_update: "" };
-let linkGemTarget = { type: null, id: null };
+let dashboardData = {
+    clientes: [],
+    creativos: [],
+    gemas: [],
+    templates: {
+        chatbot: [],
+        stock: [],
+        custom: []
+    }
+};
 
-// LOGIN LOGIC
+const WEBHOOK_URL = 'https://macavi-n8n.e2z7ef.easypanel.host/webhook/update-dashboard-data-v2';
+const MASTER_PASS = '35277Jairo924';
+
+// AUTH
 document.getElementById('login-btn').addEventListener('click', () => {
-    const input = document.getElementById('pass-input').value;
-    if (input === MASTER_PASS) {
-        document.body.classList.remove('locked');
+    const p = document.getElementById('pass-input').value;
+    if (p === MASTER_PASS) {
         document.getElementById('login-screen').classList.add('hidden');
         document.getElementById('dashboard').classList.remove('hidden');
+        document.body.classList.remove('locked');
         loadData();
     } else {
         document.getElementById('login-error').classList.remove('hidden');
     }
 });
 
-// TAB SWITCHING
-document.querySelectorAll('.nav-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-        btn.classList.add('active');
-        document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
-    });
-});
-
-// DATA LOADING
+// DATA HANDLING
 async function loadData() {
     try {
-        const response = await fetch('data.json');
-        dashboardData = await response.json();
-        // Inicializar campos si faltan por migración v2->v3
-        if(!dashboardData.gemas) dashboardData.gemas = [];
-        if(!dashboardData.clientes) dashboardData.clientes = [];
-        if(!dashboardData.creativos) dashboardData.creativos = [];
-        
-        renderAll();
-        updateLastSyncText();
+        const response = await fetch('data.json', { cache: 'no-store' });
+        if (response.ok) {
+            dashboardData = await response.json();
+            updateUI();
+        }
     } catch (e) {
-        console.error("Error cargando data inicial.");
-        renderAll();
+        console.error('Error loading data:', e);
     }
 }
 
-function updateLastSyncText() {
-    if(!dashboardData.last_update) return;
-    const date = new Date(dashboardData.last_update);
-    document.getElementById('last-sync').innerText = `Sincronizado: ${date.toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' })}`;
-}
-
-function renderAll() {
+function updateUI() {
     renderClients();
     renderFactory();
     renderGems();
+    updateLastSync();
+}
+
+function updateLastSync() {
+    const date = new Date();
+    // Offset for Argentina (UTC-3)
+    const argTime = new Date(date.toLocaleString("en-US", {timeZone: "America/Argentina/Buenos_Aires"}));
+    const hours = String(argTime.getHours()).padStart(2, '0');
+    const mins = String(argTime.getMinutes()).padStart(2, '0');
+    document.getElementById('last-sync').innerText = `Sincronizado: ${hours}:${mins}hs (🇦🇷)`;
 }
 
 // CLIENTS RENDERING
 function renderClients() {
     const container = document.getElementById('clients-container');
     container.innerHTML = dashboardData.clientes.map(client => {
-        const completed = client.steps.filter(s => s.completed).length;
-        const total = client.steps.length;
-        const percent = (completed / total) * 100;
+        const steps = client.steps || [];
+        const completed = steps.filter(s => s.completed).length;
+        const total = steps.length;
+        const percent = total > 0 ? (completed / total) * 100 : 0;
         
         return `
             <div class="project-card glass">
@@ -71,30 +70,35 @@ function renderClients() {
                 </div>
                 
                 <div class="prog-bar-bg"><div class="prog-bar-fill" style="width: ${percent}%"></div></div>
-                <span class="prog-text">${completed}/${total} Pasos Completados</span>
+                <span class="prog-text">${completed}/${total} Pasos</span>
 
                 <div class="checklist">
-                    ${client.steps.map(step => `
-                        <label class="check-item">
-                            <input type="checkbox" ${step.completed ? 'checked' : ''} onchange="toggleStep('clientes', '${client.id}', ${step.id})">
-                            <span>${step.label}</span>
-                        </label>
+                    ${steps.map(step => `
+                        <div class="check-item-row">
+                            <label class="check-item">
+                                <input type="checkbox" ${step.completed ? 'checked' : ''} onchange="toggleStep('clientes', '${client.id}', ${step.id})">
+                                <span>${step.label}</span>
+                            </label>
+                            <button class="btn-mini-delete" onclick="deleteStep('clientes', '${client.id}', ${step.id})">×</button>
+                        </div>
                     `).join('')}
+                    <button class="btn-add-step" onclick="openAddStepModal('clientes', '${client.id}')">+ Agregar Paso</button>
                 </div>
 
                 <div class="project-gems">
-                    <div class="gems-header">
-                        <label>Gemas Estratégicas</label>
-                        <button class="btn-gem-add" onclick="openLinkGemModal('clientes', '${client.id}', '${client.name}')"><i class="fa-solid fa-link"></i> Vincular</button>
-                    </div>
                     <div class="linked-gems-list">
                         ${renderLinkedGems(client.gemas_vinculadas || [], 'clientes', client.id)}
+                        <button class="btn-gem-add" onclick="openLinkGemModal('clientes', '${client.id}', '${client.name}')"><i class="fa-solid fa-link"></i> Vincular Gema</button>
                     </div>
                 </div>
 
                 <div class="project-notes">
+                    <label><i class="fa-solid fa-table"></i> Google Sheets</label>
+                    <input type="text" placeholder="Pegá link de Sheets aquí" value="${client.sheets_link || ''}" 
+                           onchange="updateProjectField('clientes', '${client.id}', 'sheets_link', this.value)"
+                           class="link-input">
                     <label>Notas de Proyecto</label>
-                    <textarea placeholder="Datos importantes del cliente..." onchange="updateProjectField('clientes', '${client.id}', 'notas', this.value)">${client.notas || ''}</textarea>
+                    <textarea placeholder="..." onchange="updateProjectField('clientes', '${client.id}', 'notas', this.value)">${client.notas || ''}</textarea>
                 </div>
             </div>
         `;
@@ -105,9 +109,10 @@ function renderClients() {
 function renderFactory() {
     const container = document.getElementById('factory-container');
     container.innerHTML = dashboardData.creativos.map(item => {
-        const completed = item.steps.filter(s => s.completed).length;
-        const total = item.steps.length;
-        const percent = (completed / total) * 100;
+        const steps = item.steps || [];
+        const completed = steps.filter(s => s.completed).length;
+        const total = steps.length;
+        const percent = total > 0 ? (completed / total) * 100 : 0;
 
         return `
             <div class="project-card glass">
@@ -120,61 +125,238 @@ function renderFactory() {
                 <span class="prog-text">Progreso: ${Math.round(percent)}%</span>
 
                 <div class="checklist">
-                    ${item.steps.map(step => `
-                        <label class="check-item">
-                            <input type="checkbox" ${step.completed ? 'checked' : ''} onchange="toggleStep('creativos', '${item.id}', ${step.id})">
-                            <span>${step.label}</span>
-                        </label>
+                    ${steps.map(step => `
+                        <div class="check-item-row">
+                            <label class="check-item">
+                                <input type="checkbox" ${step.completed ? 'checked' : ''} onchange="toggleStep('creativos', '${item.id}', ${step.id})">
+                                <span>${step.label}</span>
+                            </label>
+                            <button class="btn-mini-delete" onclick="deleteStep('creativos', '${item.id}', ${step.id})">×</button>
+                        </div>
                     `).join('')}
+                    <button class="btn-add-step" onclick="openAddStepModal('creativos', '${item.id}')">+ Agregar Paso</button>
                 </div>
 
                 <div class="project-gems">
-                    <div class="gems-header">
-                        <label>Gemas Utilizadas</label>
-                        <button class="btn-gem-add" onclick="openLinkGemModal('creativos', '${item.id}', '${item.title}')"><i class="fa-solid fa-link"></i> Vincular</button>
-                    </div>
                     <div class="linked-gems-list">
                         ${renderLinkedGems(item.gemas_vinculadas || [], 'creativos', item.id)}
+                        <button class="btn-gem-add" onclick="openLinkGemModal('creativos', '${item.id}', '${item.title}')"><i class="fa-solid fa-link"></i> Vincular Gema</button>
                     </div>
                 </div>
 
                 <div class="project-notes">
-                    <label>Copy Estratégico y Notas</label>
-                    <textarea placeholder="Pegá el copy o ideas aquí..." onchange="updateProjectField('creativos', '${item.id}', 'notas', this.value)">${item.notas || ''}</textarea>
+                    <label><i class="fa-solid fa-table"></i> Google Sheets</label>
+                    <input type="text" placeholder="Pegá link de Sheets aquí" value="${item.sheets_link || ''}" 
+                           onchange="updateProjectField('creativos', '${item.id}', 'sheets_link', this.value)"
+                           class="link-input">
+                    <label>Copy / Notas</label>
+                    <textarea placeholder="..." onchange="updateProjectField('creativos', '${item.id}', 'notas', this.value)">${item.notas || ''}</textarea>
                 </div>
             </div>
         `;
     }).join('');
 }
 
-// GEMS (Directorio)
+function renderLinkedGems(gems, type, parentId) {
+    if (!gems.length) return '';
+    return gems.map((g, idx) => `
+        <div class="linked-gem-tag">
+            <span><strong>${g.name}</strong>: ${g.thread_title}</span>
+            <button onclick="unlinkGem('${type}', '${parentId}', ${idx})">×</button>
+        </div>
+    `).join('');
+}
+
+// LOGIC ACTIONS
+function toggleStep(type, parentId, stepId) {
+    const list = dashboardData[type];
+    const parent = list.find(p => p.id === parentId);
+    if (parent) {
+        const step = parent.steps.find(s => s.id === stepId);
+        if (step) step.completed = !step.completed;
+        updateUI();
+    }
+}
+
+function updateProjectField(type, id, field, val) {
+    const item = dashboardData[type].find(p => p.id === id);
+    if (item) {
+        item[field] = val;
+    }
+}
+
+// ADD/DELETE ITEMS
+function addClient() {
+    const name = document.getElementById('new-client-name').value;
+    const templateKey = document.getElementById('new-client-template').value;
+    if (!name) return;
+
+    const newClient = {
+        id: 'cl-' + Date.now(),
+        name: name,
+        sheets_link: '',
+        notas: '',
+        gemas_vinculadas: [],
+        steps: JSON.parse(JSON.stringify(dashboardData.templates[templateKey] || []))
+    };
+
+    dashboardData.clientes.push(newClient);
+    closeAllModals();
+    updateUI();
+}
+
+function addCreative() {
+    const title = document.getElementById('new-creative-title').value;
+    const type = document.getElementById('new-creative-type').value;
+    if (!title) return;
+
+    const newCreative = {
+        id: 'cr-' + Date.now(),
+        title: title,
+        type: type,
+        sheets_link: '',
+        notas: '',
+        gemas_vinculadas: [],
+        steps: [
+            { id: 1, label: 'Guion / Script', completed: false },
+            { id: 2, label: 'Selección de Assets', completed: false },
+            { id: 3, label: 'Generación Audio/AI', completed: false },
+            { id: 4, label: 'Edición Final', completed: false },
+            { id: 5, label: 'Publicación', completed: false }
+        ]
+    };
+
+    dashboardData.creativos.push(newCreative);
+    closeAllModals();
+    updateUI();
+}
+
+function deleteItem(type, id) {
+    if (confirm('¿Seguro que querés eliminar?')) {
+        dashboardData[type] = dashboardData[type].filter(p => p.id !== id);
+        updateUI();
+    }
+}
+
+// GEMS MANAGEMENT
 function renderGems() {
     const grid = document.getElementById('gems-grid');
-    grid.innerHTML = dashboardData.gemas.map(gem => `
-        <div class="gem-tile glass">
-            <h5>${gem.name}</h5>
-            <p>${gem.description}</p>
-            <button class="btn-gem-delete" onclick="deleteGem('${gem.name}')"><i class="fa-solid fa-circle-xmark"></i></button>
+    grid.innerHTML = dashboardData.gemas.map(g => `
+        <div class="gem-card glass">
+            <h5>${g.name} <button class="btn-mini-delete" onclick="deleteGem('${g.name}')">×</button></h5>
+            <p>${g.description}</p>
         </div>
     `).join('');
 }
 
-// HELPERS
-function renderLinkedGems(list, type, parentId) {
-    if(list.length === 0) return `<small style="color:var(--text-dim)">Sin gemas vinculadas</small>`;
-    return list.map((lg, index) => `
-        <div class="gem-linked-item">
-            <div class="gem-top">
-                <span>${lg.name}</span>
-                <button class="btn-unlink" onclick="unlinkGem('${type}', '${parentId}', ${index})"><i class="fa-solid fa-unlink"></i></button>
-            </div>
-            <input type="text" class="gem-thread" placeholder="Título de la charla..." value="${lg.thread_title || ''}" 
-                   onchange="updateLinkedGemTitle('${type}', '${parentId}', ${index}, this.value)">
-        </div>
-    `).join('');
+function addGem() {
+    const name = document.getElementById('new-gem-name').value;
+    const desc = document.getElementById('new-gem-desc').value;
+    if (!name) return;
+
+    dashboardData.gemas.push({ name, description: desc });
+    closeAllModals();
+    updateUI();
 }
 
-// MODAL LOGIC
+function deleteGem(name) {
+    if (confirm(`¿Eliminar gema ${name}?`)) {
+        dashboardData.gemas = dashboardData.gemas.filter(g => g.name !== name);
+        updateUI();
+    }
+}
+
+// LINK GEMS MODAL
+let activeLinkTarget = { type: '', id: '' };
+function openLinkGemModal(type, id, name) {
+    activeLinkTarget = { type, id };
+    document.getElementById('link-gem-target-name').innerText = `Vinculando a: ${name}`;
+    const select = document.getElementById('select-gem-to-link');
+    select.innerHTML = dashboardData.gemas.map(g => `<option value="${g.name}">${g.name}</option>`).join('');
+    openModal('modal-link-gem');
+}
+
+function confirmLinkGem() {
+    const gemName = document.getElementById('select-gem-to-link').value;
+    const thread = document.getElementById('link-gem-thread').value;
+    if (!gemName || !thread) return;
+
+    const list = dashboardData[activeLinkTarget.type];
+    const item = list.find(p => p.id === activeLinkTarget.id);
+    if (item) {
+        if (!item.gemas_vinculadas) item.gemas_vinculadas = [];
+        item.gemas_vinculadas.push({ name: gemName, thread_title: thread });
+        closeAllModals();
+        updateUI();
+    }
+}
+
+function unlinkGem(type, parentId, idx) {
+    const item = dashboardData[type].find(p => p.id === parentId);
+    if (item) {
+        item.gemas_vinculadas.splice(idx, 1);
+        updateUI();
+    }
+}
+
+// CUSTOM STEPS
+let activeStepTarget = { type: '', id: '' };
+function openAddStepModal(type, id) {
+    activeStepTarget = { type, id };
+    openModal('modal-add-step');
+}
+
+function confirmAddStep() {
+    const label = document.getElementById('new-step-label').value;
+    if (!label) return;
+
+    const item = dashboardData[activeStepTarget.type].find(p => p.id === activeStepTarget.id);
+    if (item) {
+        const nextId = item.steps.length > 0 ? Math.max(...item.steps.map(s => s.id)) + 1 : 1;
+        item.steps.push({ id: nextId, label, completed: false });
+        closeAllModals();
+        updateUI();
+    }
+}
+
+function deleteStep(type, parentId, stepId) {
+    const item = dashboardData[type].find(p => p.id === parentId);
+    if (item) {
+        item.steps = item.steps.filter(s => s.id !== stepId);
+        updateUI();
+    }
+}
+
+// SYNC
+document.getElementById('save-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('save-btn');
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sincronizando...';
+    btn.disabled = true;
+
+    try {
+        const response = await fetch(WEBHOOK_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dashboardData)
+        });
+
+        if (response.ok) {
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> ¡Éxito!';
+            setTimeout(() => {
+                btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Sincronizar (Argentina)';
+                btn.disabled = false;
+            }, 3000);
+        } else {
+            throw new Error('Sync failed');
+        }
+    } catch (e) {
+        alert('Error al sincronizar. Verificá n8n.');
+        btn.innerHTML = '<i class="fa-solid fa-xmark"></i> Error';
+        btn.disabled = false;
+    }
+});
+
+// MODAL UTILS
 function openModal(id) {
     document.getElementById('modal-overlay').classList.remove('hidden');
     document.getElementById(id).classList.remove('hidden');
@@ -183,150 +365,17 @@ function openModal(id) {
 function closeAllModals() {
     document.getElementById('modal-overlay').classList.add('hidden');
     document.querySelectorAll('.modal').forEach(m => m.classList.add('hidden'));
+    // Reset inputs
+    document.querySelectorAll('.modal input, .modal textarea').forEach(i => i.value = '');
 }
 
-function openLinkGemModal(type, id, name) {
-    linkGemTarget = { type, id };
-    document.getElementById('link-gem-target-name').innerText = `Vinculando a: ${name}`;
-    const select = document.getElementById('select-gem-to-link');
-    select.innerHTML = dashboardData.gemas.map(g => `<option value="${g.name}">${g.name}</option>`).join('');
-    document.getElementById('link-gem-thread').value = "";
-    openModal('modal-link-gem');
-}
-
-function confirmLinkGem() {
-    const gemName = document.getElementById('select-gem-to-link').value;
-    const thread = document.getElementById('link-gem-thread').value;
-    if(!gemName) return;
-
-    const item = dashboardData[linkGemTarget.type].find(i => i.id === linkGemTarget.id);
-    if(!item.gemas_vinculadas) item.gemas_vinculadas = [];
-    item.gemas_vinculadas.push({ name: gemName, thread_title: thread });
-    
-    closeAllModals();
-    renderAll();
-}
-
-// CRUD ACTIONS
-function addClient() {
-    const name = document.getElementById('new-client-name').value;
-    if(!name) return;
-    dashboardData.clientes.push({
-        id: 'cl-' + Date.now(),
-        name: name,
-        notas: "",
-        gemas_vinculadas: [],
-        steps: [
-            { id: 1, label: "Crear cuenta EasyPanel", completed: false },
-            { id: 2, label: "Carpeta Drive de Cliente", completed: false },
-            { id: 3, label: "Instalar n8n / Herramientas", completed: false },
-            { id: 4, label: "Conectar Evolution/YCloud", completed: false },
-            { id: 5, label: "Mapeo de Datos y Webhooks", completed: false },
-            { id: 6, label: "Entrega de Manual Cliente", completed: false }
-        ]
+// TABS
+document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const tab = btn.dataset.tab;
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(`tab-${tab}`).classList.add('active');
     });
-    closeAllModals();
-    document.getElementById('new-client-name').value = "";
-    renderClients();
-}
-
-function addCreative() {
-    const title = document.getElementById('new-creative-title').value;
-    const type = document.getElementById('new-creative-type').value;
-    if(!title) return;
-    dashboardData.creativos.push({
-        id: 'cr-' + Date.now(),
-        title: title,
-        type: type,
-        notas: "",
-        gemas_vinculadas: [],
-        steps: [
-            { id: 1, label: "Guion / Script Estratégico", completed: false },
-            { id: 2, label: "Selección de Assets / Stock", completed: false },
-            { id: 3, label: "Generación de Voz / Audio", completed: false },
-            { id: 4, label: "Edición Final", completed: false },
-            { id: 5, label: "Aprobación / Publicación", completed: false }
-        ]
-    });
-    closeAllModals();
-    document.getElementById('new-creative-title').value = "";
-    renderFactory();
-}
-
-function addGem() {
-    const name = document.getElementById('new-gem-name').value;
-    const desc = document.getElementById('new-gem-desc').value;
-    if(!name || !desc) return;
-    dashboardData.gemas.push({ name, description: desc });
-    closeAllModals();
-    document.getElementById('new-gem-name').value = "";
-    document.getElementById('new-gem-desc').value = "";
-    renderGems();
-}
-
-// UPDATE LOGIC
-function toggleStep(type, itemId, stepId) {
-    const item = dashboardData[type].find(i => i.id === itemId);
-    const step = item.steps.find(s => s.id === stepId);
-    step.completed = !step.completed;
-    renderAll();
-}
-
-function updateProjectField(type, itemId, field, value) {
-    const item = dashboardData[type].find(i => i.id === itemId);
-    item[field] = value;
-}
-
-function updateLinkedGemTitle(type, itemId, gemIndex, value) {
-    const item = dashboardData[type].find(i => i.id === itemId);
-    item.gemas_vinculadas[gemIndex].thread_title = value;
-}
-
-function unlinkGem(type, itemId, index) {
-    const item = dashboardData[type].find(i => i.id === itemId);
-    item.gemas_vinculadas.splice(index, 1);
-    renderAll();
-}
-
-function deleteItem(type, id) {
-    if(confirm(`¿Eliminar este ${type === 'clientes' ? 'cliente' : 'proyecto'}?`)) {
-        dashboardData[type] = dashboardData[type].filter(i => i.id !== id);
-        renderAll();
-    }
-}
-
-function deleteGem(name) {
-    if(confirm(`¿Eliminar gema ${name} del directorio?`)) {
-        dashboardData.gemas = dashboardData.gemas.filter(g => g.name !== name);
-        renderGems();
-    }
-}
-
-// SAVE & SYNC (ARGENTINA TIME)
-document.getElementById('save-btn').addEventListener('click', async () => {
-    const btn = document.getElementById('save-btn');
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sincronizando...';
-    
-    // Forzar fecha en America/Argentina/Buenos_Aires para el JSON
-    const now = new Date();
-    dashboardData.last_update = now.toISOString(); 
-
-    try {
-        const response = await fetch(WEBHOOK_URL, {
-            method: 'POST',
-            mode: 'cors',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(dashboardData)
-        });
-
-        if (response.ok) {
-            updateLastSyncText();
-            alert("¡Éxito! Dashboard v3.0 sincronizado en horario de Argentina.");
-        } else { throw new Error("n8n no respondió OK"); }
-    } catch (e) {
-        console.error(e);
-        alert("Error de conexión. Verificá tu flujo de n8n.");
-    } finally {
-        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Sincronizar (Argentina)';
-    }
 });
