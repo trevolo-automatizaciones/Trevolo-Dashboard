@@ -1,6 +1,7 @@
 const MASTER_PASS = "35277Jairo924";
 const WEBHOOK_URL = "https://macavi-n8n.e2z7ef.easypanel.host/webhook/update-dashboard-data-v2";
-let dashboardData = { clientes: [], creativos: [], gemas: [], notas: "", antigravity_log: [] };
+let dashboardData = { clientes: [], creativos: [], gemas: [], last_update: "" };
+let linkGemTarget = { type: null, id: null };
 
 // LOGIN LOGIC
 document.getElementById('login-btn').addEventListener('click', () => {
@@ -30,20 +31,29 @@ async function loadData() {
     try {
         const response = await fetch('data.json');
         dashboardData = await response.json();
+        // Inicializar campos si faltan por migración v2->v3
+        if(!dashboardData.gemas) dashboardData.gemas = [];
+        if(!dashboardData.clientes) dashboardData.clientes = [];
+        if(!dashboardData.creativos) dashboardData.creativos = [];
+        
         renderAll();
-        document.getElementById('last-sync').innerText = `Sincronizado: ${new Date(dashboardData.last_update || Date.now()).toLocaleString()}`;
+        updateLastSyncText();
     } catch (e) {
-        console.error("Error cargando data inicial, usando fallback.");
+        console.error("Error cargando data inicial.");
         renderAll();
     }
+}
+
+function updateLastSyncText() {
+    if(!dashboardData.last_update) return;
+    const date = new Date(dashboardData.last_update);
+    document.getElementById('last-sync').innerText = `Sincronizado: ${date.toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' })}`;
 }
 
 function renderAll() {
     renderClients();
     renderFactory();
     renderGems();
-    renderNotes();
-    updateGemSelects();
 }
 
 // CLIENTS RENDERING
@@ -55,17 +65,36 @@ function renderClients() {
         const percent = (completed / total) * 100;
         
         return `
-            <div class="client-card glass">
-                <h4>${client.name} <button class="btn-delete" onclick="deleteClient('${client.id}')"><i class="fa-solid fa-trash"></i></button></h4>
+            <div class="project-card glass">
+                <div class="card-header">
+                    <h4>${client.name} <button class="btn-delete" onclick="deleteItem('clientes', '${client.id}')"><i class="fa-solid fa-trash"></i></button></h4>
+                </div>
+                
                 <div class="prog-bar-bg"><div class="prog-bar-fill" style="width: ${percent}%"></div></div>
-                <small>${completed}/${total} pasos completados</small>
+                <span class="prog-text">${completed}/${total} Pasos Completados</span>
+
                 <div class="checklist">
                     ${client.steps.map(step => `
-                        <div class="check-item">
-                            <input type="checkbox" ${step.completed ? 'checked' : ''} onchange="toggleClientStep('${client.id}', ${step.id})">
+                        <label class="check-item">
+                            <input type="checkbox" ${step.completed ? 'checked' : ''} onchange="toggleStep('clientes', '${client.id}', ${step.id})">
                             <span>${step.label}</span>
-                        </div>
+                        </label>
                     `).join('')}
+                </div>
+
+                <div class="project-gems">
+                    <div class="gems-header">
+                        <label>Gemas Estratégicas</label>
+                        <button class="btn-gem-add" onclick="openLinkGemModal('clientes', '${client.id}', '${client.name}')"><i class="fa-solid fa-link"></i> Vincular</button>
+                    </div>
+                    <div class="linked-gems-list">
+                        ${renderLinkedGems(client.gemas_vinculadas || [], 'clientes', client.id)}
+                    </div>
+                </div>
+
+                <div class="project-notes">
+                    <label>Notas de Proyecto</label>
+                    <textarea placeholder="Datos importantes del cliente..." onchange="updateProjectField('clientes', '${client.id}', 'notas', this.value)">${client.notas || ''}</textarea>
                 </div>
             </div>
         `;
@@ -75,49 +104,77 @@ function renderClients() {
 // FACTORY RENDERING
 function renderFactory() {
     const container = document.getElementById('factory-container');
-    container.innerHTML = dashboardData.creativos.map(item => `
-        <div class="factory-card glass">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start">
-                <div>
-                   <span class="card-type">${item.type}</span>
-                   <h4 style="margin: 10px 0 5px 0">${item.title}</h4>
+    container.innerHTML = dashboardData.creativos.map(item => {
+        const completed = item.steps.filter(s => s.completed).length;
+        const total = item.steps.length;
+        const percent = (completed / total) * 100;
+
+        return `
+            <div class="project-card glass">
+                <div class="card-header">
+                    <span class="card-type">${item.type}</span>
+                    <h4 style="margin-top:10px">${item.title} <button class="btn-delete" onclick="deleteItem('creativos', '${item.id}')"><i class="fa-solid fa-trash"></i></button></h4>
                 </div>
-                <button class="btn-delete" onclick="deleteCreative('${item.id}')"><i class="fa-solid fa-xmark"></i></button>
+
+                <div class="prog-bar-bg"><div class="prog-bar-fill" style="width: ${percent}%"></div></div>
+                <span class="prog-text">Progreso: ${Math.round(percent)}%</span>
+
+                <div class="checklist">
+                    ${item.steps.map(step => `
+                        <label class="check-item">
+                            <input type="checkbox" ${step.completed ? 'checked' : ''} onchange="toggleStep('creativos', '${item.id}', ${step.id})">
+                            <span>${step.label}</span>
+                        </label>
+                    `).join('')}
+                </div>
+
+                <div class="project-gems">
+                    <div class="gems-header">
+                        <label>Gemas Utilizadas</label>
+                        <button class="btn-gem-add" onclick="openLinkGemModal('creativos', '${item.id}', '${item.title}')"><i class="fa-solid fa-link"></i> Vincular</button>
+                    </div>
+                    <div class="linked-gems-list">
+                        ${renderLinkedGems(item.gemas_vinculadas || [], 'creativos', item.id)}
+                    </div>
+                </div>
+
+                <div class="project-notes">
+                    <label>Copy Estratégico y Notas</label>
+                    <textarea placeholder="Pegá el copy o ideas aquí..." onchange="updateProjectField('creativos', '${item.id}', 'notas', this.value)">${item.notas || ''}</textarea>
+                </div>
             </div>
-            
-            <span class="gem-badge"><i class="fa-solid fa-brain"></i> ${item.gema_vinculada || 'Sin gema'}</span>
-            <input type="text" placeholder="ID/Título de la Charla" value="${item.thread_title || ''}" 
-                   onchange="updateCreativeField('${item.id}', 'thread_title', this.value)"
-                   style="font-size: 11px; background: transparent; border: 1px solid var(--border); padding: 5px; width: 100%; border-radius: 5px; color: var(--emerald);">
-            
-            <textarea placeholder="Pegá el copy estratégico aquí..." 
-                      onchange="updateCreativeField('${item.id}', 'copy', this.value)">${item.copy || ''}</textarea>
-            
-            <div class="checklist" style="margin-top: 15px;">
-                <label class="check-item"><input type="checkbox" ${item.assets.freepik ? 'checked' : ''} onchange="toggleAsset('${item.id}', 'freepik')"> Freepik / Assets</label>
-                <label class="check-item"><input type="checkbox" ${item.assets.voice ? 'checked' : ''} onchange="toggleAsset('${item.id}', 'voice')"> Voz en Off / AI</label>
-                <label class="check-item"><input type="checkbox" ${item.assets.video ? 'checked' : ''} onchange="toggleAsset('${item.id}', 'video')"> Edición / Final</label>
-            </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
-// GEMS RENDERING
+// GEMS (Directorio)
 function renderGems() {
     const grid = document.getElementById('gems-grid');
     grid.innerHTML = dashboardData.gemas.map(gem => `
-        <div class="gem-card glass">
+        <div class="gem-tile glass">
             <h5>${gem.name}</h5>
             <p>${gem.description}</p>
+            <button class="btn-gem-delete" onclick="deleteGem('${gem.name}')"><i class="fa-solid fa-circle-xmark"></i></button>
         </div>
     `).join('');
 }
 
-function renderNotes() {
-    document.getElementById('notes-area').value = dashboardData.notas || "";
+// HELPERS
+function renderLinkedGems(list, type, parentId) {
+    if(list.length === 0) return `<small style="color:var(--text-dim)">Sin gemas vinculadas</small>`;
+    return list.map((lg, index) => `
+        <div class="gem-linked-item">
+            <div class="gem-top">
+                <span>${lg.name}</span>
+                <button class="btn-unlink" onclick="unlinkGem('${type}', '${parentId}', ${index})"><i class="fa-solid fa-unlink"></i></button>
+            </div>
+            <input type="text" class="gem-thread" placeholder="Título de la charla..." value="${lg.thread_title || ''}" 
+                   onchange="updateLinkedGemTitle('${type}', '${parentId}', ${index}, this.value)">
+        </div>
+    `).join('');
 }
 
-// UI ACTIONS
+// MODAL LOGIC
 function openModal(id) {
     document.getElementById('modal-overlay').classList.remove('hidden');
     document.getElementById(id).classList.remove('hidden');
@@ -128,98 +185,132 @@ function closeAllModals() {
     document.querySelectorAll('.modal').forEach(m => m.classList.add('hidden'));
 }
 
-function updateGemSelects() {
-    const select = document.getElementById('new-creative-gem');
-    if (!select) return;
+function openLinkGemModal(type, id, name) {
+    linkGemTarget = { type, id };
+    document.getElementById('link-gem-target-name').innerText = `Vinculando a: ${name}`;
+    const select = document.getElementById('select-gem-to-link');
     select.innerHTML = dashboardData.gemas.map(g => `<option value="${g.name}">${g.name}</option>`).join('');
+    document.getElementById('link-gem-thread').value = "";
+    openModal('modal-link-gem');
 }
 
-// CRUD OPERATIONS
+function confirmLinkGem() {
+    const gemName = document.getElementById('select-gem-to-link').value;
+    const thread = document.getElementById('link-gem-thread').value;
+    if(!gemName) return;
+
+    const item = dashboardData[linkGemTarget.type].find(i => i.id === linkGemTarget.id);
+    if(!item.gemas_vinculadas) item.gemas_vinculadas = [];
+    item.gemas_vinculadas.push({ name: gemName, thread_title: thread });
+    
+    closeAllModals();
+    renderAll();
+}
+
+// CRUD ACTIONS
 function addClient() {
     const name = document.getElementById('new-client-name').value;
-    if (!name) return;
-    
-    const newClient = {
+    if(!name) return;
+    dashboardData.clientes.push({
         id: 'cl-' + Date.now(),
         name: name,
+        notas: "",
+        gemas_vinculadas: [],
         steps: [
             { id: 1, label: "Crear cuenta EasyPanel", completed: false },
-            { id: 2, label: "Instalar n8n / Herramientas", completed: false },
-            { id: 3, label: "Conectar Evolution/YCloud", completed: false },
-            { id: 4, label: "Mapeo de Datos y Webhooks", completed: false },
-            { id: 5, label: "Entrega de Manual Cliente", completed: false }
+            { id: 2, label: "Carpeta Drive de Cliente", completed: false },
+            { id: 3, label: "Instalar n8n / Herramientas", completed: false },
+            { id: 4, label: "Conectar Evolution/YCloud", completed: false },
+            { id: 5, label: "Mapeo de Datos y Webhooks", completed: false },
+            { id: 6, label: "Entrega de Manual Cliente", completed: false }
         ]
-    };
-    
-    dashboardData.clientes.push(newClient);
+    });
     closeAllModals();
+    document.getElementById('new-client-name').value = "";
     renderClients();
-    document.getElementById('new-client-name').value = '';
 }
 
 function addCreative() {
     const title = document.getElementById('new-creative-title').value;
     const type = document.getElementById('new-creative-type').value;
-    const gem = document.getElementById('new-creative-gem').value;
-    if (!title) return;
-
-    const newCr = {
+    if(!title) return;
+    dashboardData.creativos.push({
         id: 'cr-' + Date.now(),
         title: title,
         type: type,
-        gema_vinculada: gem,
-        thread_title: "",
-        copy: "",
-        assets: { freepik: false, voice: false, video: false }
-    };
-
-    dashboardData.creativos.push(newCr);
+        notas: "",
+        gemas_vinculadas: [],
+        steps: [
+            { id: 1, label: "Guion / Script Estratégico", completed: false },
+            { id: 2, label: "Selección de Assets / Stock", completed: false },
+            { id: 3, label: "Generación de Voz / Audio", completed: false },
+            { id: 4, label: "Edición Final", completed: false },
+            { id: 5, label: "Aprobación / Publicación", completed: false }
+        ]
+    });
     closeAllModals();
+    document.getElementById('new-creative-title').value = "";
     renderFactory();
-    document.getElementById('new-creative-title').value = '';
+}
+
+function addGem() {
+    const name = document.getElementById('new-gem-name').value;
+    const desc = document.getElementById('new-gem-desc').value;
+    if(!name || !desc) return;
+    dashboardData.gemas.push({ name, description: desc });
+    closeAllModals();
+    document.getElementById('new-gem-name').value = "";
+    document.getElementById('new-gem-desc').value = "";
+    renderGems();
 }
 
 // UPDATE LOGIC
-function toggleClientStep(clientId, stepId) {
-    const client = dashboardData.clientes.find(c => c.id === clientId);
-    const step = client.steps.find(s => s.id === stepId);
+function toggleStep(type, itemId, stepId) {
+    const item = dashboardData[type].find(i => i.id === itemId);
+    const step = item.steps.find(s => s.id === stepId);
     step.completed = !step.completed;
-    renderClients();
+    renderAll();
 }
 
-function toggleAsset(crId, assetKey) {
-    const cr = dashboardData.creativos.find(c => c.id === crId);
-    cr.assets[assetKey] = !cr.assets[assetKey];
+function updateProjectField(type, itemId, field, value) {
+    const item = dashboardData[type].find(i => i.id === itemId);
+    item[field] = value;
 }
 
-function updateCreativeField(crId, field, value) {
-    const cr = dashboardData.creativos.find(c => c.id === crId);
-    cr[field] = value;
+function updateLinkedGemTitle(type, itemId, gemIndex, value) {
+    const item = dashboardData[type].find(i => i.id === itemId);
+    item.gemas_vinculadas[gemIndex].thread_title = value;
 }
 
-function updateNotes(val) {
-    dashboardData.notas = val;
+function unlinkGem(type, itemId, index) {
+    const item = dashboardData[type].find(i => i.id === itemId);
+    item.gemas_vinculadas.splice(index, 1);
+    renderAll();
 }
 
-function deleteClient(id) {
-    if(confirm("¿Eliminar cliente?")) {
-        dashboardData.clientes = dashboardData.clientes.filter(c => c.id !== id);
-        renderClients();
+function deleteItem(type, id) {
+    if(confirm(`¿Eliminar este ${type === 'clientes' ? 'cliente' : 'proyecto'}?`)) {
+        dashboardData[type] = dashboardData[type].filter(i => i.id !== id);
+        renderAll();
     }
 }
 
-function deleteCreative(id) {
-    dashboardData.creativos = dashboardData.creativos.filter(c => c.id !== id);
-    renderFactory();
+function deleteGem(name) {
+    if(confirm(`¿Eliminar gema ${name} del directorio?`)) {
+        dashboardData.gemas = dashboardData.gemas.filter(g => g.name !== name);
+        renderGems();
+    }
 }
 
-// SAVE & SYNC
+// SAVE & SYNC (ARGENTINA TIME)
 document.getElementById('save-btn').addEventListener('click', async () => {
     const btn = document.getElementById('save-btn');
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sincronizando...';
     
-    dashboardData.last_update = new Date().toISOString();
-    
+    // Forzar fecha en America/Argentina/Buenos_Aires para el JSON
+    const now = new Date();
+    dashboardData.last_update = now.toISOString(); 
+
     try {
         const response = await fetch(WEBHOOK_URL, {
             method: 'POST',
@@ -229,14 +320,13 @@ document.getElementById('save-btn').addEventListener('click', async () => {
         });
 
         if (response.ok) {
-            alert("¡Éxito! Dashboard sincronizado en la nube (GitHub).");
-        } else {
-            throw new Error("Respuesta no OK");
-        }
+            updateLastSyncText();
+            alert("¡Éxito! Dashboard v3.0 sincronizado en horario de Argentina.");
+        } else { throw new Error("n8n no respondió OK"); }
     } catch (e) {
         console.error(e);
-        alert("Error de conexión. Asegurate de que n8n esté activo y tenga CORS habilitado.");
+        alert("Error de conexión. Verificá tu flujo de n8n.");
     } finally {
-        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Guardar Sincronización';
+        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Sincronizar (Argentina)';
     }
 });
