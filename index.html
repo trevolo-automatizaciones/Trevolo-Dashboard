@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trevolo Command Center</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="locked">
+    <!-- Pantalla de Bloqueo -->
+    <div id="login-screen">
+        <div class="login-card glass">
+            <div class="logo-box">
+                <i class="fa-solid fa-clover"></i>
+            </div>
+            <h1>Trevolo Ops</h1>
+            <p>Ingresá la contraseña maestra</p>
+            <input type="password" id="pass-input" placeholder="Contraseña...">
+            <button id="login-btn">Acceder <i class="fa-solid fa-arrow-right"></i></button>
+            <p id="login-error" class="hidden">Contraseña incorrecta. Reintentá.</p>
+        </div>
+    </div>
+
+    <!-- Dashboard Principal -->
+    <div id="dashboard" class="hidden">
+        <header>
+            <div class="header-left">
+                <div class="logo-mini"><i class="fa-solid fa-clover"></i></div>
+                <div class="title-stack">
+                    <h2>COMMAND CENTER</h2>
+                    <span id="last-sync">Cargando datos...</span>
+                </div>
+            </div>
+            <nav>
+                <button class="nav-btn active" data-tab="ops"><i class="fa-solid fa-rocket"></i> Operaciones</button>
+                <button class="nav-btn" data-tab="factory"><i class="fa-solid fa-film"></i> Fábrica</button>
+                <button class="nav-btn" data-tab="gems"><i class="fa-solid fa-brain"></i> Gemas</button>
+            </nav>
+            <div class="header-right">
+                <button id="save-btn" class="btn-primary"><i class="fa-solid fa-cloud-arrow-up"></i> Guardar Cambios</button>
+            </div>
+        </header>
+
+        <main>
+            <!-- TAB: OPERACIONES -->
+            <section id="tab-ops" class="tab-content active">
+                <div class="section-header">
+                    <h3>Onboarding de Clientes</h3>
+                    <p>Estandarización de procesos para nuevos servicios.</p>
+                </div>
+                <div class="checklist-container ripple-card glass">
+                    <ul id="onboarding-list">
+                        <!-- Rendered via JS -->
+                    </ul>
+                </div>
+            </section>
+
+            <!-- TAB: FÁBRICA -->
+            <section id="tab-factory" class="tab-content">
+                <div class="section-header">
+                    <h3>Producción de Creativos</h3>
+                    <p>Gestión de Reels, Imágenes y Copys para Meta.</p>
+                </div>
+                <div id="factory-container" class="grid-layout">
+                    <!-- Rendered via JS -->
+                </div>
+            </section>
+
+            <!-- TAB: GEMAS -->
+            <section id="tab-gems" class="tab-content">
+                <div class="section-header">
+                    <h3>Directorio de IAs (Gemas)</h3>
+                    <p>Guía de uso para cada herramienta del ecosistema.</p>
+                </div>
+                <div id="gems-grid" class="grid-layout">
+                    <!-- Rendered via JS -->
+                </div>
+            </section>
+        </main>
+
+        <aside id="antigravity-aside">
+            <div class="aside-header">
+                <i class="fa-solid fa-terminal"></i> Antigravity Log
+            </div>
+            <div id="log-content">
+                <!-- Rendered via JS -->
+            </div>
+        </aside>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

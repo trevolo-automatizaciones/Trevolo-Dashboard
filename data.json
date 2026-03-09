@@ -1,0 +1,45 @@
+{
+  "last_update": "2026-03-09T17:25:00Z",
+  "antigravity_log": [
+    {
+      "date": "2026-03-09",
+      "event": "Creación del repositorio Trevolo-Dashboard y estructura base."
+    }
+  ],
+  "onboarding": {
+    "status": "pending",
+    "steps": [
+      {"id": 1, "label": "Crear cuenta en EasyPanel", "completed": false},
+      {"id": 2, "label": "Nuevo proyecto en EasyPanel", "completed": false},
+      {"id": 3, "label": "Instalar n8n y herramientas", "completed": false},
+      {"id": 4, "label": "Conectar Evolution API / YCloud", "completed": false},
+      {"id": 5, "label": "Mapeo de Datos y Webhooks", "completed": false}
+    ]
+  },
+  "content_factory": [
+    {
+      "id": "reel_01",
+      "title": "Reel Calentamiento - Avatar",
+      "status": "in_progress",
+      "drive_link": "",
+      "copy": "",
+      "assets": {
+        "freepik": false,
+        "voice": true,
+        "video": false
+      }
+    }
+  ],
+  "gemas": [
+    {"name": "OPERACIONES_MASTER", "category": "CORE"},
+    {"name": "VENTAS_STRATEGY", "category": "CORE"},
+    {"name": "SKILLS_ARCHITECT", "category": "CORE"},
+    {"name": "N8N_WORKFLOWS", "category": "TECH"},
+    {"name": "N8N_CODE_JS", "category": "TECH"},
+    {"name": "WHATSAPP_YCLOUD", "category": "TECH"},
+    {"name": "WHATSAPP_SOFY", "category": "TECH"},
+    {"name": "CREATIVOS_META", "category": "CREATIVE"},
+    {"name": "KNOWLEDGE_N_LM", "category": "CREATIVE"},
+    {"name": "ORACULO_FINANZAS", "category": "EXTRA"}
+  ]
+}
