@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,12 +11,14 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body class="locked">
     <!-- Pantalla de Bloqueo -->
     <div id="login-screen">
         <div class="login-card glass">
             <div class="logo-box">
-                <img src="logo_trevolo.png" alt="Trevolo Logo" class="main-logo" onerror="this.src='https://cdn-icons-png.flaticon.com/512/2618/2618254.png'">
+                <img src="logo_trevolo.png" alt="Trevolo Logo" class="main-logo"
+                    onerror="this.src='https://cdn-icons-png.flaticon.com/512/2618/2618254.png'">
             </div>
             <h1>Trevolo Ops</h1>
             <p>Ingresá la contraseña maestra</p>
@@ -36,12 +39,14 @@
                 </div>
             </div>
             <nav id="main-nav">
-                <button class="nav-btn active" data-tab="clients"><i class="fa-solid fa-users-gear"></i> Clientes</button>
+                <button class="nav-btn active" data-tab="clients"><i class="fa-solid fa-users-gear"></i>
+                    Clientes</button>
                 <button class="nav-btn" data-tab="factory"><i class="fa-solid fa-clapperboard"></i> Fábrica</button>
                 <button class="nav-btn" data-tab="gems"><i class="fa-solid fa-brain"></i> Gemas</button>
             </nav>
             <div class="header-right">
-                <button id="save-btn" class="btn-primary ripple"><i class="fa-solid fa-cloud-arrow-up"></i> Sincronizar (Argentina)</button>
+                <button id="save-btn" class="btn-primary ripple"><i class="fa-solid fa-cloud-arrow-up"></i> Copia de Seguridad
+                    (Nube)</button>
             </div>
         </header>
 
@@ -53,7 +58,8 @@
                         <h3>Gestión de Clientes</h3>
                         <p>Ordená tus procesos por tipo de flujo.</p>
                     </div>
-                    <button class="btn-add" onclick="openModal('modal-add-client')"><i class="fa-solid fa-plus"></i> Nuevo Cliente</button>
+                    <button class="btn-add" onclick="openModal('modal-add-client')"><i class="fa-solid fa-plus"></i>
+                        Nuevo Cliente</button>
                 </div>
                 <div id="clients-container" class="grid-layout">
                     <!-- Clientes Renderizados -->
@@ -67,7 +73,8 @@
                         <h3>Fábrica de Contenidos</h3>
                         <p>Producción de Reels, Imágenes y Carruseles.</p>
                     </div>
-                    <button class="btn-add" onclick="openModal('modal-add-creative')"><i class="fa-solid fa-plus"></i> Nuevo Proyecto</button>
+                    <button class="btn-add" onclick="openModal('modal-add-creative')"><i class="fa-solid fa-plus"></i>
+                        Nuevo Proyecto</button>
                 </div>
                 <div id="factory-container" class="grid-layout">
                     <!-- Creativos Renderizados -->
@@ -81,7 +88,8 @@
                         <h3>Directorio de Gemas</h3>
                         <p>Caja de herramientas de Trevolo.</p>
                     </div>
-                    <button class="btn-add" onclick="openModal('modal-add-gem')"><i class="fa-solid fa-plus"></i> Nueva Gema</button>
+                    <button class="btn-add" onclick="openModal('modal-add-gem')"><i class="fa-solid fa-plus"></i> Nueva
+                        Gema</button>
                 </div>
                 <div id="gems-grid" class="grid-layout-gems">
                     <!-- Gemas Renderizadas -->
@@ -91,7 +99,7 @@
     </div>
 
     <div id="modal-overlay" class="hidden" onclick="closeAllModals()"></div>
-    
+
     <!-- Modal Add Client -->
     <div id="modal-add-client" class="modal glass hidden">
         <h4>Agregar Nuevo Cliente</h4>
@@ -156,6 +164,8 @@
         </div>
     </div>
 
+    <script src="data.js"></script>
     <script src="script.js"></script>
 </body>
+
 </html>
